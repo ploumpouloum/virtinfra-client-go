@@ -10,18 +10,18 @@ type Client struct {
 	Account           Account
 }
 
-func (client Client) OpenAccountFromLocalStorage(localFileLocation string) error {
+func OpenClientFromLocalStorage(localFileLocation string) (client *Client, err error) {
 	client.LocalFileLocation = localFileLocation
 	fileContent, err := ioutil.ReadFile(client.LocalFileLocation)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = json.Unmarshal(fileContent, &client.Account)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return client, nil
 }
 
 func (client Client) persistState() error {

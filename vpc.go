@@ -4,17 +4,17 @@ type VpcId string
 type Cidr string
 
 type Vpc struct {
-	Id      VpcId
-	Cidr    Cidr
+	Id      VpcId `json:"id"`
+	Cidr    Cidr  `json:"cidr"`
 	subnets []Subnet
 }
 
 func (client Client) VpcGetList() ([]Vpc, error) {
-	return client.account.Vpcs, nil
+	return client.Account.Vpcs, nil
 }
 
 func (client Client) VpcAdd() error {
-	client.account.Vpcs = append(client.account.Vpcs,
+	client.Account.Vpcs = append(client.Account.Vpcs,
 		Vpc{
 			Id: "1234",
 		},

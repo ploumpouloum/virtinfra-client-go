@@ -10,11 +10,11 @@ type Vpc struct {
 }
 
 func (client Client) VpcGetList() ([]Vpc, error) {
-	return client.Account.Vpcs, nil
+	return client.account.Vpcs, nil
 }
 
 func (client Client) VpcAdd() error {
-	client.Account.Vpcs = append(client.Account.Vpcs,
+	client.account.Vpcs = append(client.account.Vpcs,
 		Vpc{
 			Id: "1234",
 		},

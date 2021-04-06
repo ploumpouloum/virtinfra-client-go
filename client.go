@@ -6,18 +6,19 @@ import (
 )
 
 type Client struct {
-	LocalFileLocation string
-	Account           Account
+	localFileLocation string
+	account           Account
 }
 
 func OpenClientFromLocalStorage(localFileLocation string) (client *Client, err error) {
-	client.LocalFileLocation = localFileLocation
-	fileContent, err := ioutil.ReadFile(client.LocalFileLocation)
+	client = &Client{}
+	client.localFileLocation = localFileLocation
+	fileContent, err := ioutil.ReadFile(client.localFileLocation)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(fileContent, &client.Account)
+	err = json.Unmarshal(fileContent, &client.account)
 	if err != nil {
 		return nil, err
 	}
@@ -25,12 +26,12 @@ func OpenClientFromLocalStorage(localFileLocation string) (client *Client, err e
 }
 
 func (client Client) persistState() error {
-	b, err := json.MarshalIndent(client.Account, "", "\t")
+	b, err := json.MarshalIndent(client.account, "", "\t")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(client.LocalFileLocation, b, 0644)
+	err = ioutil.WriteFile(client.localFileLocation, b, 0644)
 	if err != nil {
 		return err
 	}

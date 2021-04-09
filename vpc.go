@@ -52,7 +52,7 @@ func (client Client) VpcGet(id VpcId) (*Vpc, error) {
 			return &vpc, nil
 		}
 	}
-	return nil, fmt.Errorf("Unable to find VPC Id '%s'", id)
+	return nil, nil
 }
 
 func (client Client) VpcUpdate(updatedVpc *Vpc) error {

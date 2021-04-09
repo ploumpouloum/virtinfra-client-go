@@ -53,7 +53,7 @@ func (client Client) SubnetGet(id SubnetId) (*Subnet, error) {
 			return &subnet, nil
 		}
 	}
-	return nil, fmt.Errorf("Unable to find Subnet Id '%s'", id)
+	return nil, nil
 }
 
 func (client Client) SubnetUpdate(updatedSubnet *Subnet) error {

@@ -1,7 +1,7 @@
 # This GitHub action runs your tests for each commit push and/or PR. Optionally
 # you can turn it on using a cron schedule for regular testing.
 #
-name: Tests
+name: Build and Test
 on:
   pull_request:
     paths-ignore:
@@ -40,3 +40,6 @@ jobs:
       run: |
         go build -v .
 
+    - name: Tests
+      run: |
+        go test -v

@@ -1,6 +1,7 @@
 package virtinfra
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -68,11 +69,9 @@ func TestClient_VpcAdd(t *testing.T) {
 			if err := client.VpcAdd(&tt.vpcToAdd); (err != nil) != tt.wantErr {
 				t.Errorf("Client.VpcAdd() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			assert.Equalf(t, len(tt.resultVpcs), len(client.account.Vpcs), "Unexpected number of Vpcs found")
 			for _, resultVpc := range tt.resultVpcs {
 				assert.GreaterOrEqual(t, slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Cidr == resultVpc.Cidr }), 0, "Vpc with CIDR %v is missing", resultVpc.Cidr)
-			}
-			if len(tt.resultVpcs) == 0 && len(client.account.Vpcs) > 0 {
-				t.Error("Client.VpcAdd() error: Vpc list is not empty")
 			}
 		})
 	}
@@ -172,11 +171,125 @@ func TestClient_VpcDelete(t *testing.T) {
 			if err := client.VpcDelete(tt.vpcIdToDelete); (err != nil) != tt.wantErr {
 				t.Errorf("Client.VpcDelete() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			assert.Equalf(t, len(tt.resultVpcs), len(client.account.Vpcs), "Unexpected number of Vpcs found")
 			for _, resultVpc := range tt.resultVpcs {
 				assert.Contains(t, client.account.Vpcs, resultVpc)
 			}
-			if len(tt.resultVpcs) == 0 && len(client.account.Vpcs) > 0 {
-				t.Error("Client.VpcDelete() error: Vpc list is not empty")
+		})
+	}
+}
+
+func TestClient_VpcUpdate(t *testing.T) {
+	client := Client{
+		localFileLocation: "dummyLocation",
+		account:           Account{},
+		doNotPersist:      true,
+	}
+	tests := []struct {
+		name         string
+		existingVpcs []Vpc
+		resultVpcs   []Vpc
+		updatedVpc   Vpc
+		wantErr      bool
+	}{
+		{
+			name: "One single VPC to update",
+			existingVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+			},
+			resultVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.1.0.0/16",
+				},
+			},
+			updatedVpc: Vpc{
+				Id:   "1234",
+				Cidr: "10.1.0.0/16",
+			},
+			wantErr: false,
+		},
+		{
+			name: "One VPC to update among many",
+			existingVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+				{
+					Id:   "12345",
+					Cidr: "10.1.0.0/16",
+				},
+				{
+					Id:   "123456",
+					Cidr: "10.2.0.0/16",
+				},
+			},
+			resultVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+				{
+					Id:   "12345",
+					Cidr: "10.3.0.0/16",
+				},
+				{
+					Id:   "123456",
+					Cidr: "10.2.0.0/16",
+				},
+			},
+			updatedVpc: Vpc{
+				Id:   "12345",
+				Cidr: "10.3.0.0/16",
+			},
+			wantErr: false,
+		},
+		{
+			name: "One VPC to update which does not exists",
+			existingVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+			},
+			resultVpcs: []Vpc{},
+			updatedVpc: Vpc{
+				Id:   "12345",
+				Cidr: "10.3.0.0/16",
+			},
+			wantErr: true,
+		},
+		{
+			name:         "One VPC to update without any existing VPCs",
+			existingVpcs: []Vpc{},
+			resultVpcs:   []Vpc{},
+			updatedVpc: Vpc{
+				Id:   "12345",
+				Cidr: "10.3.0.0/16",
+			},
+			wantErr: true,
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client.account.Vpcs = tt.existingVpcs
+			fmt.Printf("%v, %v\n", len(tt.resultVpcs), len(client.account.Vpcs))
+			if err := client.VpcUpdate(&tt.updatedVpc); (err != nil) != tt.wantErr {
+				t.Errorf("Client.VpcUpdate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return // Do not check other arguments if we expect an error
+			}
+			assert.Equalf(t, len(tt.resultVpcs), len(client.account.Vpcs), "Unexpected number of Vpcs found")
+			for _, resultVpc := range tt.resultVpcs {
+				matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == resultVpc.Id })
+				assert.GreaterOrEqual(t, matchingVpcIdx, 0, "Vpc with Id %v is missing", resultVpc.Id)
+				assert.Equalf(t, resultVpc.Cidr, client.account.Vpcs[matchingVpcIdx].Cidr, "Vpc with Id %v has incorrect CIDR", resultVpc.Id)
 			}
 		})
 	}

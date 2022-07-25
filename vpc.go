@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 type VpcId string
@@ -50,7 +52,7 @@ func (client *Client) VpcDelete(id VpcId) error {
 	return nil
 }
 
-func (client Client) VpcGet(id VpcId) (*Vpc, error) {
+func (client *Client) VpcGet(id VpcId) (*Vpc, error) {
 	for _, vpc := range client.account.Vpcs {
 		if vpc.Id == id {
 			return &vpc, nil
@@ -59,13 +61,12 @@ func (client Client) VpcGet(id VpcId) (*Vpc, error) {
 	return nil, nil
 }
 
-func (client Client) VpcUpdate(updatedVpc *Vpc) error {
-	for i, vpc := range client.account.Vpcs {
-		if vpc.Id == updatedVpc.Id {
-			client.account.Vpcs[i] = *updatedVpc
-			break
-		}
+func (client *Client) VpcUpdate(updatedVpc *Vpc) error {
+	matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == updatedVpc.Id })
+	if matchingVpcIdx < 0 {
+		return fmt.Errorf("VPC Id %v does not exists", updatedVpc.Id)
 	}
+	client.account.Vpcs[matchingVpcIdx] = *updatedVpc
 	err := client.persistState()
 	if err != nil {
 		return err

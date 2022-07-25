@@ -34,17 +34,11 @@ func (client *Client) VpcAdd(vpc *Vpc) error {
 }
 
 func (client *Client) VpcDelete(id VpcId) error {
-	var iVpcToDelete = -1
-	for i, vpc := range client.account.Vpcs {
-		if vpc.Id == id {
-			iVpcToDelete = i
-		}
+	matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == id })
+	if matchingVpcIdx < 0 {
+		return fmt.Errorf("VPC Id %v does not exists", id)
 	}
-	if iVpcToDelete >= 0 {
-		client.account.Vpcs = append(client.account.Vpcs[:iVpcToDelete], client.account.Vpcs[iVpcToDelete+1:]...)
-	} else {
-		return fmt.Errorf("Unable to find VPC Id '%s'", id)
-	}
+	client.account.Vpcs = append(client.account.Vpcs[:matchingVpcIdx], client.account.Vpcs[matchingVpcIdx+1:]...)
 	err := client.persistState()
 	if err != nil {
 		return err
@@ -53,12 +47,11 @@ func (client *Client) VpcDelete(id VpcId) error {
 }
 
 func (client *Client) VpcGet(id VpcId) (*Vpc, error) {
-	for _, vpc := range client.account.Vpcs {
-		if vpc.Id == id {
-			return &vpc, nil
-		}
+	matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == id })
+	if matchingVpcIdx < 0 {
+		return nil, fmt.Errorf("VPC Id %v does not exists", id)
 	}
-	return nil, nil
+	return &client.account.Vpcs[matchingVpcIdx], nil
 }
 
 func (client *Client) VpcUpdate(updatedVpc *Vpc) error {

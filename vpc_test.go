@@ -1,7 +1,6 @@
 package virtinfra
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -278,7 +277,6 @@ func TestClient_VpcUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client.account.Vpcs = tt.existingVpcs
-			fmt.Printf("%v, %v\n", len(tt.resultVpcs), len(client.account.Vpcs))
 			if err := client.VpcUpdate(&tt.updatedVpc); (err != nil) != tt.wantErr {
 				t.Errorf("Client.VpcUpdate() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -291,6 +289,87 @@ func TestClient_VpcUpdate(t *testing.T) {
 				assert.GreaterOrEqual(t, matchingVpcIdx, 0, "Vpc with Id %v is missing", resultVpc.Id)
 				assert.Equalf(t, resultVpc.Cidr, client.account.Vpcs[matchingVpcIdx].Cidr, "Vpc with Id %v has incorrect CIDR", resultVpc.Id)
 			}
+		})
+	}
+}
+
+func TestClient_VpcGet(t *testing.T) {
+	client := Client{
+		localFileLocation: "dummyLocation",
+		account:           Account{},
+		doNotPersist:      true,
+	}
+	tests := []struct {
+		name         string
+		existingVpcs []Vpc
+		resultVpc    Vpc
+		idToGet      VpcId
+		wantErr      bool
+	}{
+		{
+			name: "One single VPC to get",
+			existingVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+			},
+			resultVpc: Vpc{
+
+				Id:   "1234",
+				Cidr: "10.0.0.0/16",
+			},
+			idToGet: "1234",
+			wantErr: false,
+		},
+		{
+			name: "One single VPC to get among many",
+			existingVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+				{
+					Id:   "12345",
+					Cidr: "10.1.0.0/16",
+				},
+				{
+					Id:   "123456",
+					Cidr: "10.2.0.0/16",
+				},
+			},
+			resultVpc: Vpc{
+
+				Id:   "12345",
+				Cidr: "10.1.0.0/16",
+			},
+			idToGet: "12345",
+			wantErr: false,
+		},
+		{
+			name: "One single VPC to get which does not exists",
+			existingVpcs: []Vpc{
+				{
+					Id:   "1234",
+					Cidr: "10.0.0.0/16",
+				},
+			},
+			idToGet: "12343",
+			wantErr: true,
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client.account.Vpcs = tt.existingVpcs
+			vpc, err := client.VpcGet(tt.idToGet)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Client.VpcGet() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return // Do not check other arguments if we expect an error
+			}
+			assert.Equalf(t, tt.resultVpc, *vpc, "Unexpected Vpc Id found")
 		})
 	}
 }

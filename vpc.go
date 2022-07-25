@@ -3,6 +3,7 @@ package virtinfra
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 )
 
 type VpcId string
@@ -18,6 +19,9 @@ func (client *Client) VpcGetList() ([]Vpc, error) {
 }
 
 func (client *Client) VpcAdd(vpc *Vpc) error {
+	if strings.TrimSpace(string(vpc.Cidr)) == "" {
+		return fmt.Errorf("VPC Cidr block cannot be blank or empty")
+	}
 	vpc.Id = (VpcId)(fmt.Sprintf("vpc-%08d", rand.Intn(100000000)))
 	client.account.Vpcs = append(client.account.Vpcs, *vpc)
 	err := client.persistState()

@@ -14,15 +14,15 @@ func TestClient_VpcAdd(t *testing.T) {
 		doNotPersist:      true,
 	}
 	tests := []struct {
-		name       string
-		vpcs       []Vpc
-		resultVpcs []Vpc
-		vpcToAdd   Vpc
-		wantErr    bool
+		name         string
+		existingVpcs []Vpc
+		resultVpcs   []Vpc
+		vpcToAdd     Vpc
+		wantErr      bool
 	}{
 		{
-			name: "Add Vpc to empty list",
-			vpcs: []Vpc{},
+			name:         "Add Vpc to empty list",
+			existingVpcs: []Vpc{},
 			resultVpcs: []Vpc{
 				{
 					Cidr: "10.0.0.0/16",
@@ -35,7 +35,7 @@ func TestClient_VpcAdd(t *testing.T) {
 		},
 		{
 			name: "Add Vpc to existing list",
-			vpcs: []Vpc{
+			existingVpcs: []Vpc{
 				{
 					Cidr: "10.0.0.0/16",
 				},
@@ -53,11 +53,18 @@ func TestClient_VpcAdd(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name:         "Can't add Vpc with empty CIDR block",
+			existingVpcs: []Vpc{},
+			resultVpcs:   []Vpc{},
+			vpcToAdd:     Vpc{},
+			wantErr:      true,
+		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client.account.Vpcs = tt.vpcs
+			client.account.Vpcs = tt.existingVpcs
 			if err := client.VpcAdd(&tt.vpcToAdd); (err != nil) != tt.wantErr {
 				t.Errorf("Client.VpcAdd() error = %v, wantErr %v", err, tt.wantErr)
 			}

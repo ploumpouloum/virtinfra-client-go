@@ -20,6 +20,10 @@ func (client *Client) VpcGetList() ([]Vpc, error) {
 	return client.account.Vpcs, nil
 }
 
+func (client *Client) getVpcIdxFromId(id VpcId) int {
+	return slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == id })
+}
+
 func (client *Client) VpcAdd(vpc *Vpc) error {
 	if strings.TrimSpace(string(vpc.Cidr)) == "" {
 		return fmt.Errorf("VPC Cidr block cannot be blank or empty")
@@ -34,7 +38,7 @@ func (client *Client) VpcAdd(vpc *Vpc) error {
 }
 
 func (client *Client) VpcDelete(id VpcId) error {
-	matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == id })
+	matchingVpcIdx := client.getVpcIdxFromId(id)
 	if matchingVpcIdx < 0 {
 		return fmt.Errorf("VPC Id %v does not exists", id)
 	}
@@ -47,7 +51,7 @@ func (client *Client) VpcDelete(id VpcId) error {
 }
 
 func (client *Client) VpcGet(id VpcId) (*Vpc, error) {
-	matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == id })
+	matchingVpcIdx := client.getVpcIdxFromId(id)
 	if matchingVpcIdx < 0 {
 		return nil, fmt.Errorf("VPC Id %v does not exists", id)
 	}
@@ -55,7 +59,7 @@ func (client *Client) VpcGet(id VpcId) (*Vpc, error) {
 }
 
 func (client *Client) VpcUpdate(updatedVpc *Vpc) error {
-	matchingVpcIdx := slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Id == updatedVpc.Id })
+	matchingVpcIdx := client.getVpcIdxFromId(updatedVpc.Id)
 	if matchingVpcIdx < 0 {
 		return fmt.Errorf("VPC Id %v does not exists", updatedVpc.Id)
 	}

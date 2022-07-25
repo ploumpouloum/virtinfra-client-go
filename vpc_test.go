@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slices"
 )
 
 func TestClient_VpcAdd(t *testing.T) {
@@ -24,11 +25,11 @@ func TestClient_VpcAdd(t *testing.T) {
 			vpcs: []Vpc{},
 			resultVpcs: []Vpc{
 				{
-					Id: "1234",
+					Cidr: "10.0.0.0/16",
 				},
 			},
 			vpcToAdd: Vpc{
-				Id: "1234",
+				Cidr: "10.0.0.0/16",
 			},
 			wantErr: false,
 		},
@@ -36,19 +37,19 @@ func TestClient_VpcAdd(t *testing.T) {
 			name: "Add Vpc to existing list",
 			vpcs: []Vpc{
 				{
-					Id: "1234",
+					Cidr: "10.0.0.0/16",
 				},
 			},
 			resultVpcs: []Vpc{
 				{
-					Id: "1234",
+					Cidr: "10.0.0.0/16",
 				},
 				{
-					Id: "12345",
+					Cidr: "10.1.0.0/16",
 				},
 			},
 			vpcToAdd: Vpc{
-				Id: "12345",
+				Cidr: "10.1.0.0/16",
 			},
 			wantErr: false,
 		},
@@ -57,11 +58,11 @@ func TestClient_VpcAdd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client.account.Vpcs = tt.vpcs
-			if err := client.VpcAdd(tt.vpcToAdd); (err != nil) != tt.wantErr {
+			if err := client.VpcAdd(&tt.vpcToAdd); (err != nil) != tt.wantErr {
 				t.Errorf("Client.VpcAdd() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			for _, resultVpc := range tt.resultVpcs {
-				assert.Contains(t, client.account.Vpcs, resultVpc)
+				assert.GreaterOrEqual(t, slices.IndexFunc(client.account.Vpcs, func(v Vpc) bool { return v.Cidr == resultVpc.Cidr }), 0, "Vpc with CIDR %v is missing", resultVpc.Cidr)
 			}
 			if len(tt.resultVpcs) == 0 && len(client.account.Vpcs) > 0 {
 				t.Error("Client.VpcAdd() error: Vpc list is not empty")
